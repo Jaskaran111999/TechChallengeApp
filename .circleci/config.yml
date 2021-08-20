@@ -1,7 +1,13 @@
 # Golang CircleCI 2.0 configuration file
 #
 # Check https://circleci.com/docs/2.0/language-go/ for more details
-version: 2
+version: 2.1
+
+# adding ecs and ecr orbs to upload image to ecr and ecs respectively
+orbs:
+  aws-ecr: circleci/aws-ecr@7.0.0
+  aws-ecs: circleci/aws-ecs@2.2.1
+
 jobs:
   build:
     working_directory: /go/src/github.com/servian/TechChallengeApp
@@ -161,7 +167,7 @@ jobs:
           
 workflows:
   version: 2
-  build_test_deploy:
+  build_test_deploy-push:
     jobs:
       - build
       - deploy:
@@ -172,3 +178,15 @@ workflows:
               only: master
             tags:
               ignore: /.*/
+      - aws-ecr/build-and-push-image:
+          repo: tech-challenge-app
+          tag: "latest,v0.1.${CIRCLE_BUILD_NUM}"
+          dockerfile: Dockerfile
+          path: .
+          requires:
+            - deploy
+      - aws-ecs/deploy-service-update:
+          cluster-name: "${AWS_RESOURCE_NAME_PREFIX}-cluster"
+          family: "${AWS_RESOURCE_NAME_PREFIX}-service"
+          requires:
+            - aws-ecr/build-and-push-image
