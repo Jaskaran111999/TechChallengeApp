@@ -1,11 +1,11 @@
 # Golang CircleCI 2.0 configuration file
 #
 # Check https://circleci.com/docs/2.0/language-go/ for more details
-version: 2
+version: 2.1
 
 # adding ecs and ecr orbs to upload image to ecr and ecs respectively
 orbs:
-  aws-ecr: circleci/aws-ecr@7.0.0
+  aws-ecr: circleci/aws-ecr@6.15.0
   aws-ecs: circleci/aws-ecs@2.2.1
 
 jobs:
@@ -155,7 +155,7 @@ jobs:
 
               if [ -z "${prerelease}" ]; then
                 echo "No pre-release in version, creating release"
-                ghr -u servian ${version} output
+                #ghr -u servian ${version} output
               else
                 echo "Found pre-release in version, creating pre-release"
                 ghr -u servian -prerelease ${version} output
@@ -178,5 +178,15 @@ workflows:
               only: master
             tags:
               ignore: /.*/
-      - aws-ecr/push-image:
+      - aws-ecr/build-and-push-image:
           repo: tech-challenge-app
+          tag: "latest,v0.1.${CIRCLE_BUILD_NUM}"
+          dockerfile: Dockerfile
+          path: .
+          requires:
+            - deploy
+      - aws-ecs/deploy-service-update:
+          cluster-name: "${AWS_RESOURCE_NAME_PREFIX}-cluster"
+          family: "${AWS_RESOURCE_NAME_PREFIX}-service"
+          requires:
+            - aws-ecr/build-and-push-image
