@@ -5,7 +5,7 @@ version: 2.1
 
 # adding ecs and ecr orbs to upload image to ecr and ecs respectively
 orbs:
-  aws-ecr: circleci/aws-ecr@7.0.0
+  aws-ecr: circleci/aws-ecr@6.15.0
   aws-ecs: circleci/aws-ecs@2.2.1
 
 jobs:
